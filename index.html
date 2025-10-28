@@ -28,6 +28,8 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 .wrong { color:red; font-weight:bold; }
 .empty { color:#777; font-weight:bold; }
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -364,6 +366,28 @@ async function finishExam() {
     link.href = "#";
     link.download = "";
   }
+
+  // تولید خودکار PDF از بخش نتیجه پس از نمایش
+  setTimeout(async () => {
+      try {
+          const resultSection = document.getElementById("result-section");
+          const canvas = await html2canvas(resultSection, { scale: 2, useCORS: true });
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jspdf.jsPDF({
+              orientation: "portrait",
+              unit: "pt",
+              format: "a4"
+          });
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+          const imgWidth = pageWidth - 40;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          pdf.addImage(imgData, "PNG", 20, 20, imgWidth, imgHeight);
+          pdf.save(`گزارش_آزمون_${studentName}.pdf`);
+      } catch (e) {
+          console.error("خطا در ساخت PDF:", e);
+      }
+  }, 1000);
 }
 
 // حذف ذخیره نتایج در localStorage (دیگر استفاده نمی‌شود)
@@ -435,4 +459,3 @@ async function loadTeacherResults() {
 </script>
 </body>
 </html>
-
