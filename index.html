@@ -225,11 +225,10 @@ function renderQuestion() {
     if (answers[currentQuestion] === i) div.style.background = "#d0c4f7";
     div.innerText = `گزینه ${i}`;
     div.onclick = () => {
-      // Allow toggling off selection (set to null if clicked again)
       if (answers[currentQuestion] === i) {
-        answers[currentQuestion] = null;
+        answers[currentQuestion] = null; // Deselect if the same option is clicked
       } else {
-        answers[currentQuestion] = i;
+        answers[currentQuestion] = i; // Select new option
       }
       renderQuestion();
       renderQList();
