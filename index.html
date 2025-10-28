@@ -224,7 +224,16 @@ function renderQuestion() {
     div.className = "option";
     if (answers[currentQuestion] === i) div.style.background = "#d0c4f7";
     div.innerText = `گزینه ${i}`;
-    div.onclick = () => { answers[currentQuestion] = i; renderQuestion(); renderQList(); };
+    div.onclick = () => {
+      // Allow toggling off selection (set to null if clicked again)
+      if (answers[currentQuestion] === i) {
+        answers[currentQuestion] = null;
+      } else {
+        answers[currentQuestion] = i;
+      }
+      renderQuestion();
+      renderQList();
+    };
     box.appendChild(div);
   }
   document.querySelectorAll(".qnum").forEach((e, i) => { e.classList.toggle("active", i === currentQuestion); });
