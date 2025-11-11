@@ -166,20 +166,24 @@ async function fetchAndLoadExamZip(zipUrl, examName) {
       duration = parseInt(timeText.trim()) || 300;
     }
 
-    // استخراج سوالات: هر سوال یک عکس به صورت 1-1.jpg ... 50-4.jpg، گزینه صحیح اولین عکس موجود است
+    // استخراج سوالات: هر سوال یک عکس به صورت 1-1.jpg یا 1-1.png ... 50-4.jpg/png، گزینه صحیح اولین عکس موجود است
     const imgList = [];
     for (let i = 1; i <= 50; i++) {
       let found = false;
       for (let j = 1; j <= 4; j++) {
-        const fname = `${i}-${j}.jpg`;
-        const fileObj = zip.file(fname);
-        if (fileObj) {
-          const blob = await fileObj.async("blob");
-          const url = URL.createObjectURL(blob);
-          imgList.push({ id: i, src: url, correct: j });
-          found = true;
-          break;
+        const exts = ["jpg", "png"];
+        for (const ext of exts) {
+          const fname = `${i}-${j}.${ext}`;
+          const fileObj = zip.file(fname);
+          if (fileObj) {
+            const blob = await fileObj.async("blob");
+            const url = URL.createObjectURL(blob);
+            imgList.push({ id: i, src: url, correct: j });
+            found = true;
+            break;
+          }
         }
+        if (found) break;
       }
       if (!found) break;
     }
