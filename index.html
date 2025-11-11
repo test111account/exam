@@ -272,7 +272,7 @@ function startTimer(sec) {
 
 document.getElementById("finish-btn").onclick = finishExam;
 
-// پایان آزمون و ذخیره نتیجه (Supabase Only, رتبه و تراز صحیح با Dense Ranking واقعی)
+// پایان آزمون و ذخیره نتیجه (Supabase Only, رتبه و تراز صحیح با Dense Ranking واقعی و محاسبه تراز کنکوری)
 async function finishExam() {
   clearInterval(timerInterval);
 
@@ -289,8 +289,35 @@ async function finishExam() {
   const totalQuestions = selectedExam.questions.length;
   const percentScore = (rawScore / totalQuestions) * 100;
 
-  // محاسبه تراز (مثال ساده: 1000 + 10*(score-50))
-  const tScore = 1000 + (percentScore - 50) * 10;
+  // مرحله 1: دریافت همه درصدها برای محاسبه تراز کنکوری
+  let allScores = [];
+  try {
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('name, score, tScore')
+      .eq('exam', selectedExam.folder);
+    if (error) throw error;
+    allScores = data.map(r => ({ name: r.name, score: r.score, tScore: r.tScore }));
+  } catch (error) {
+    console.error("خطا در دریافت نتایج:", error);
+  }
+
+  // محاسبه میانگین و انحراف معیار درصدها
+  const percentList = allScores.map(r => Number(r.score)).filter(x => !isNaN(x));
+  percentList.push(percentScore); // درصد فعلی را هم اضافه کن (تا در جمع لحاظ شود)
+  // محاسبه میانگین
+  const mean = percentList.length > 0 ? percentList.reduce((a, b) => a + b, 0) / percentList.length : 50;
+  // محاسبه انحراف معیار
+  let stdDev = 10;
+  if (percentList.length > 1) {
+    const variance = percentList.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / percentList.length;
+    stdDev = Math.sqrt(variance);
+    // اگر stdDev خیلی کم شد، حداقل 5 قرار بده تا تراز معنادار بماند
+    if (stdDev < 5) stdDev = 5;
+  }
+
+  // محاسبه تراز کنکوری
+  const tScore = 5000 + 1000 * (percentScore - mean) / stdDev;
 
   // ذخیره نتیجه فعلی در Supabase
   try {
@@ -307,15 +334,15 @@ async function finishExam() {
     console.error("خطا در ذخیره نتیجه:", error);
   }
 
-  // دریافت همه نتایج برای محاسبه رتبه صحیح (Dense Ranking واقعی)
-  let allScores = [];
+  // مرحله 2: دریافت مجدد همه ترازها برای رتبه‌بندی (ممکن است رکورد جدید ثبت شده باشد)
+  let allTScores = [];
   try {
     const { data, error } = await supabase
       .from('exam_results')
       .select('name, tScore')
       .eq('exam', selectedExam.folder);
     if (error) throw error;
-    allScores = data.map(r => ({ name: r.name, tScore: r.tScore }));
+    allTScores = data.map(r => ({ name: r.name, tScore: r.tScore }));
   } catch (error) {
     console.error("خطا در دریافت نتایج:", error);
   }
@@ -324,7 +351,7 @@ async function finishExam() {
   // 1. همه ترازها را نزولی مرتب کن
   // 2. رتبه هر تراز را در یک Map ذخیره کن
   // 3. رتبه دانش‌آموز = مقدار Map برای تراز خودش
-  const tScoresSorted = allScores
+  const tScoresSorted = allTScores
     .map(r => Number(r.tScore))
     .filter(x => !isNaN(x));
   tScoresSorted.sort((a, b) => b - a);
