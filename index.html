@@ -78,7 +78,6 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
     <tbody id="result-body"></tbody>
   </table>
   <br>
-  <a id="answerkey-link" href="#" download><button>📘 دانلود پاسخ‌نامه</button></a>
 </div>
 
 <div class="container hidden" id="teacher-panel">
@@ -92,7 +91,7 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["physics", "11-1-r", "11-2-r"];
+const exams = ["physics", "11-1-r", "11-2-r", "shimi1"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
@@ -138,7 +137,8 @@ window.startExam = function (examName) {
   const zipLinks = {
     "physics": "https://raw.githubusercontent.com/test111account/exam/main/physics.zip",
     "11-1-r": "https://raw.githubusercontent.com/test111account/exam/main/11-1-r.zip",
-    "11-2-r": "https://raw.githubusercontent.com/test111account/exam/main/11-2-r.zip"
+    "11-2-r": "https://raw.githubusercontent.com/test111account/exam/main/11-2-r.zip",
+    "shimi1": "https://raw.githubusercontent.com/test111account/exam/main/shimi1.zip",
   };
   const zipUrl = zipLinks[examName];
   if (!zipUrl) {
@@ -374,8 +374,6 @@ async function finishExam() {
 
   document.getElementById("score-summary").innerHTML = `
     <p>🎯 درصد نمره: <b>${percentScore.toFixed(2)}%</b></p>
-    <p>📊 تراز: <b>${tScore.toFixed(2)}</b></p>
-    <p>🏆 رتبه: نفر <b>${myRank}</b> از <b>${totalParticipants}</b> نفر</p>
     <p>✅ درست: ${correct} | ❌ غلط: ${wrong} | ⏺ نزده: ${empty}</p>
   `;
 
@@ -397,15 +395,6 @@ async function finishExam() {
     tbody.innerHTML += row;
   });
 
-  // لینک دانلود پاسخنامه PDF
-  const link = document.getElementById("answerkey-link");
-  if (selectedExam.answerkeyPdfUrl) {
-    link.href = selectedExam.answerkeyPdfUrl;
-    link.download = "answerkey.pdf";
-  } else {
-    link.href = "#";
-    link.download = "";
-  }
 
   // تولید خودکار PDF از بخش نتیجه پس از نمایش
   setTimeout(async () => {
