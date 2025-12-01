@@ -172,7 +172,7 @@ async function fetchAndLoadExamZip(zipUrl, examName) {
     for (let i = 1; i <= 50; i++) {
       let found = false;
       for (let j = 1; j <= 4; j++) {
-        const exts = ["jpg", "png"];
+        const exts = ["jpg", "png", "PNG", "JPG"];
         for (const ext of exts) {
           const fname = `${i}-${j}.${ext}`;
           const fileObj = zip.file(fname);
