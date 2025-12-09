@@ -91,7 +91,7 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["zist1", "shimi_1", "hendese1", "dini"];
+const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
@@ -139,6 +139,7 @@ window.startExam = function (examName) {
       "shimi_1": "https://raw.githubusercontent.com/test111account/exam/main/shimi_1.zip",
       "hendese1": "https://raw.githubusercontent.com/test111account/exam/main/hendese1.zip",
       "dini": "https://raw.githubusercontent.com/test111account/exam/main/dini.zip",
+      "physics1": "https://raw.githubusercontent.com/test111account/exam/main/physics1.zip",
   };
   const zipUrl = zipLinks[examName];
   if (!zipUrl) {
