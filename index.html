@@ -7,7 +7,11 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600&display=swap');
 body { font-family:'Vazirmatn',sans-serif; background:linear-gradient(135deg,#c9d6ff,#e2e2e2,#d8bfd8); min-height:100vh; display:flex; align-items:center; justify-content:center; margin:0; color:#333; }
-.container { background:#ffffffcc; padding:30px; border-radius:25px; box-shadow:0 10px 25px rgba(0,0,0,0.2); width:520px; text-align:center; }
+.container { background:#ffffffcc; padding:30px; border-radius:25px; box-shadow:0 10px 25px rgba(0,0,0,0.2); width:650px; text-align:center; }
+#exam-section.container {
+    width: 90% !important;
+    max-width: 900px;
+}
 button { background:linear-gradient(90deg,#7aa2f7,#b388eb); color:white; border:none; padding:10px 18px; border-radius:12px; cursor:pointer; font-weight:600; transition:0.3s; }
 button:hover { transform:scale(1.05); }
 .hidden { display:none; }
@@ -17,6 +21,13 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 .exam-card h3 { color:#4a47a3; margin-bottom:10px; }
 .qnum { background:#d0c4f7; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold; margin:3px; }
 .qnum.active { background:#7aa2f7; color:white; }
+.qnum.answered {
+    border: 3px solid #7aa2f7;
+    background: #eef2ff;
+}
+.qnum.unanswered {
+    opacity: 0.4;
+}
 .option { display:block; background:#fff; border:1px solid #ccc; padding:8px; margin:8px auto; border-radius:10px; cursor:pointer; width:90%; transition:0.2s; }
 .option:hover { background:#e9e9ff; }
 #timer { font-size:18px; font-weight:bold; color:#4a47a3; margin:10px; }
@@ -27,10 +38,24 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 .correct { color:green; font-weight:bold; }
 .wrong { color:red; font-weight:bold; }
 .empty { color:#777; font-weight:bold; }
+.exam-btn-selected {
+    background:#4a6cf7 !important;
+    color:white !important;
+    border:2px solid #2b4ad8 !important;
+}
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+
+<div id="loading-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0008; color:white; display:none; align-items:center; justify-content:center; flex-direction:column; font-size:22px; z-index:9999;">
+    <div id="loading-text">در حال دانلود... 0%</div>
+    <div style="width:60%; background:#fff3; height:10px; border-radius:5px; margin-top:10px;">
+        <div id="loading-bar" style="width:0%; height:100%; background:#7aa2f7; border-radius:5px;"></div>
+    </div>
+    <div style="margin-top:12px; font-size:16px;">لطفاً صبر کنید...</div>
+</div>
+
 <body>
 
 <div class="container" id="login-section">
@@ -43,6 +68,9 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 
   <div id="student-form" class="hidden">
     <input type="text" id="student-name" placeholder="نام خود را وارد کنید">
+    <input type="text" id="advisor-name" placeholder="نام مشاور را وارد کنید">
+    <input type="text" id="paye" placeholder="پایه را وارد کنید">
+    <input type="text" id="reshte" placeholder="رشته را وارد کنید">
     <button id="student-enter">ورود</button>
   </div>
 
@@ -82,8 +110,12 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 
 <div class="container hidden" id="teacher-panel">
   <h2>📊 نتایج آزمون‌ها</h2>
-  <table id="results-table" style="width:100%; border-collapse:collapse;">
-    <thead><tr><th>نام</th><th>آزمون</th><th>درصد</th><th>تاریخ</th></tr></thead>
+  <h3>یک آزمون را انتخاب کنید:</h3>
+  <div id="teacher-exam-list"></div>
+  <br>
+  <button id="download-excel" style="margin-bottom:10px;">📥 دانلود اکسل</button>
+  <table id="results-table" class="hidden" style="width:100%; border-collapse:collapse;">
+    <thead><tr><th>نام</th><th>درصد</th><th>تراز</th><th>تاریخ</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
@@ -91,7 +123,7 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2"];
+const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
@@ -108,7 +140,14 @@ document.getElementById("teacher-btn").onclick = () => {
 // ورود دانش‌آموز
 document.getElementById("student-enter").onclick = () => {
   studentName = document.getElementById("student-name").value.trim();
+  advisorName = document.getElementById("advisor-name").value.trim();
+  paye = document.getElementById("paye").value.trim();
+  reshte = document.getElementById("reshte").value.trim();
+
   if (!studentName) return alert("نام را وارد کنید");
+  if (!advisorName) return alert("نام مشاور را وارد کنید");
+  if (!paye) return alert("پایه را وارد کنید");
+  if (!reshte) return alert("رشته را وارد کنید");
   document.getElementById("login-section").classList.add("hidden");
   const cont = document.getElementById("exam-container");
   cont.innerHTML = "";
@@ -128,11 +167,37 @@ document.getElementById("teacher-enter").onclick = () => {
 };
 
 // شروع آزمون (دانلود و استخراج فایل زیپ آزمون از Upload.ir با پشتیبانی کامل موبایل و مرورگرها)
-window.startExam = function (examName) {
+window.startExam = async function (examName) {
   selectedExam = examName;
   document.getElementById("exam-list").classList.add("hidden");
   document.getElementById("exam-section").classList.remove("hidden");
   document.getElementById("exam-title").innerText = "آزمون " + examName;
+  // پیش از دانلود آزمون، زمان شروع آزمون را ثبت کن (UTC) و جلوگیری از ثبت رکورد تکراری
+  try {
+      // Check if a record already exists for this student and exam
+      const { data: existing, error: fetchError } = await supabase
+          .from('exam_results')
+          .select('id')
+          .eq('name', studentName)
+          .eq('exam', examName)
+          .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      // Insert only if no existing record
+      if (!existing || existing.length === 0) {
+          await supabase
+              .from('exam_results')
+              .insert([{
+                  name: studentName,
+                  exam: examName,
+                  data: advisorName + " | " + paye + " | " + reshte,
+                  created_at: new Date().toISOString()
+              }]);
+      }
+  } catch(e) {
+      console.error("خطا در ذخیره زمان شروع آزمون:", e);
+  }
   // GitHub raw links for ZIP files:
   const zipLinks = {
       "zist1": "https://raw.githubusercontent.com/test111account/exam/main/zist1.zip",
@@ -141,6 +206,7 @@ window.startExam = function (examName) {
       "dini": "https://raw.githubusercontent.com/test111account/exam/main/dini.zip",
       "physics1": "https://raw.githubusercontent.com/test111account/exam/main/physics1.zip",
       "farsi2": "https://raw.githubusercontent.com/test111account/exam/main/farsi2.zip",
+      "riazi_22_Azar": "https://raw.githubusercontent.com/test111account/exam/main/riazi_22_Azar.zip"
   };
   const zipUrl = zipLinks[examName];
   if (!zipUrl) {
@@ -153,10 +219,32 @@ window.startExam = function (examName) {
 // دانلود فایل زیپ و استخراج داده‌ها با JSZip (با fetch و CORS)
 async function fetchAndLoadExamZip(zipUrl, examName) {
   try {
-    // دانلود فایل زیپ با fetch و blob (CORS-safe)
-    const resp = await fetch(zipUrl, { mode: 'cors' });
+    // نمایش لودینگ
+    document.getElementById("loading-overlay").style.display = "flex";
+    // دانلود فایل زیپ با پیشرفت
+    const resp = await fetch(zipUrl);
     if (!resp.ok) throw new Error("دانلود فایل زیپ انجام نشد.");
-    const zipBlob = await resp.blob();
+
+    const contentLength = resp.headers.get("Content-Length");
+    const total = contentLength ? parseInt(contentLength) : 0;
+    let received = 0;
+
+    const reader = resp.body.getReader();
+    const chunks = [];
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (total > 0) {
+            const percent = Math.floor((received / total) * 100);
+            document.getElementById("loading-text").innerText = `در حال دانلود... ${percent}%`;
+            document.getElementById("loading-bar").style.width = percent + "%";
+        }
+    }
+
+    const zipBlob = new Blob(chunks);
     // استخراج با JSZip
     const jszip = window.JSZip;
     const zipData = await zipBlob.arrayBuffer();
@@ -192,6 +280,7 @@ async function fetchAndLoadExamZip(zipUrl, examName) {
     }
     if (imgList.length === 0) {
       alert("هیچ تصویری در این زیپ یافت نشد!");
+      document.getElementById("loading-overlay").style.display = "none";
       return;
     }
     // پاسخنامه PDF
@@ -200,8 +289,10 @@ async function fetchAndLoadExamZip(zipUrl, examName) {
       const pdfBlob = await zip.file("answerkey.pdf").async("blob");
       answerkeyPdfUrl = URL.createObjectURL(pdfBlob);
     }
+    document.getElementById("loading-overlay").style.display = "none";
     showExam(imgList, duration, examName, answerkeyPdfUrl);
   } catch (e) {
+    document.getElementById("loading-overlay").style.display = "none";
     alert("خطا در بارگذاری فایل زیپ آزمون");
     console.error(e);
   }
@@ -242,7 +333,10 @@ function renderQuestion() {
     };
     box.appendChild(div);
   }
-  document.querySelectorAll(".qnum").forEach((e, i) => { e.classList.toggle("active", i === currentQuestion); });
+  document.querySelectorAll(".qnum").forEach((e, i) => {
+      e.classList.remove("active");
+      if (i === currentQuestion) e.classList.add("active");
+  });
 }
 
 // پیمایش سؤالات
@@ -255,7 +349,16 @@ function renderQList() {
   selectedExam.questions.forEach((_, i) => {
     const b = document.createElement("div");
     b.className = "qnum"; b.innerText = i + 1;
-    if (answers[i] != null) b.style.opacity = "1";
+    if (answers[i] != null) {
+        b.classList.add("answered");
+    } else {
+        b.classList.add("unanswered");
+    }
+
+    if (i === currentQuestion) {
+        b.classList.add("active");
+    }
+
     b.onclick = () => { currentQuestion = i; renderQuestion(); };
     list.appendChild(b);
   });
@@ -276,7 +379,11 @@ function startTimer(sec) {
 document.getElementById("finish-btn").onclick = finishExam;
 
 // پایان آزمون و ذخیره نتیجه (Supabase Only, رتبه و تراز صحیح با Dense Ranking واقعی و محاسبه تراز کنکوری)
+let isSavingResult = false;
+
 async function finishExam() {
+  if (isSavingResult) return; // prevent multiple clicks
+  isSavingResult = true;
   clearInterval(timerInterval);
 
   let correct = 0, wrong = 0, empty = 0;
@@ -322,19 +429,46 @@ async function finishExam() {
   // محاسبه تراز کنکوری
   const tScore = 5000 + 1000 * (percentScore - mean) / stdDev;
 
-  // ذخیره نتیجه فعلی در Supabase
+  // ذخیره نتیجه فعلی در Supabase (با جلوگیری از تکراری و بروزرسانی رکورد ناقص)
   try {
-    await supabase
-      .from('exam_results')
-      .insert([{
-        name: studentName,
-        exam: selectedExam.folder,
-        score: percentScore,
-        tScore: tScore,
-        created_at: new Date().toISOString() // ensure timestamp is set
-      }]);
+      // Check for existing record with same student, advisor, and paye
+      const { data: existing, error: fetchError } = await supabase
+          .from('exam_results')
+          .select('id, score')
+          .eq('name', studentName)
+          .eq('exam', selectedExam.folder)
+          .eq('data', advisorName + " | " + paye + " | " + reshte)
+          .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      if (existing && existing.length > 0 && (existing[0].score === null || existing[0].score === undefined)) {
+          // Update the existing record
+          await supabase
+            .from('exam_results')
+            .update({
+              score: percentScore,
+              tScore: tScore,
+              created_at: new Date().toISOString()
+            })
+            .eq('id', existing[0].id);
+      } else if (!existing || existing.length === 0) {
+          // Insert new record if none exists
+          await supabase
+            .from('exam_results')
+            .insert([{
+              name: studentName,
+              exam: selectedExam.folder,
+              score: percentScore,
+              tScore: tScore,
+              data: advisorName + " | " + paye + " | " + reshte,
+              created_at: new Date().toISOString()
+            }]);
+      }
   } catch (error) {
-    console.error("خطا در ذخیره نتیجه:", error);
+      console.error("خطا در ذخیره نتیجه:", error);
+  } finally {
+      isSavingResult = false;
   }
 
   // مرحله 2: دریافت مجدد همه ترازها برای رتبه‌بندی (ممکن است رکورد جدید ثبت شده باشد)
@@ -398,22 +532,36 @@ async function finishExam() {
   });
 
 
-  // تولید خودکار PDF از بخش نتیجه پس از نمایش
+  // تولید خودکار PDF از بخش نتیجه پس از نمایش (پشتیبانی از چند صفحه)
   setTimeout(async () => {
       try {
           const resultSection = document.getElementById("result-section");
           const canvas = await html2canvas(resultSection, { scale: 2, useCORS: true });
           const imgData = canvas.toDataURL("image/png");
+
           const pdf = new jspdf.jsPDF({
               orientation: "portrait",
               unit: "pt",
               format: "a4"
           });
+
           const pageWidth = pdf.internal.pageSize.getWidth();
           const pageHeight = pdf.internal.pageSize.getHeight();
           const imgWidth = pageWidth - 40;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          pdf.addImage(imgData, "PNG", 20, 20, imgWidth, imgHeight);
+
+          let remainingHeight = imgHeight;
+          let positionY = 20;
+
+          pdf.addImage(imgData, "PNG", 20, positionY, imgWidth, imgHeight);
+
+          while (remainingHeight > pageHeight - 40) {
+              pdf.addPage();
+              remainingHeight -= (pageHeight - 40);
+              positionY = 20 - remainingHeight;
+              pdf.addImage(imgData, "PNG", 20, positionY, imgWidth, imgHeight);
+          }
+
           pdf.save(`گزارش_آزمون_${studentName}.pdf`);
       } catch (e) {
           console.error("خطا در ساخت PDF:", e);
@@ -427,51 +575,94 @@ async function finishExam() {
 function showTeacherPanel() {
   document.getElementById("login-section").classList.add("hidden");
   document.getElementById("teacher-panel").classList.remove("hidden");
-  loadTeacherResults();
+  const list = document.getElementById("teacher-exam-list");
+  list.innerHTML = "";
+  const resultsTable = document.getElementById("results-table");
+  resultsTable.classList.add("hidden"); // hide initially
+
+  exams.forEach(ex => {
+      const btn = document.createElement("button");
+      btn.style.margin = "5px";
+      btn.innerText = ex;
+      btn.onclick = () => {
+          // Remove highlight from all buttons
+          document.querySelectorAll("#teacher-exam-list button").forEach(b => b.classList.remove("exam-btn-selected"));
+          // Highlight the selected button
+          btn.classList.add("exam-btn-selected");
+          // Show the results table
+          resultsTable.classList.remove("hidden");
+          loadTeacherResults(ex);
+      };
+      list.appendChild(btn);
+  });
 }
 
 // لود نتایج ذخیره‌شده از Supabase با نمایش تاریخ و ساعت ثبت و ستون تراز
-async function loadTeacherResults() {
+async function loadTeacherResults(selectedExamName = null) {
   const tbody = document.querySelector("#teacher-panel tbody");
   tbody.innerHTML = "";
+  document.getElementById("results-table").classList.remove("hidden");
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('exam_results')
-      .select('name, exam, score, tScore, created_at');
+      .select('name, exam, score, created_at, data');
+    if (selectedExamName) query = query.eq('exam', selectedExamName);
+    const { data, error } = await query;
     // Debug: Print all received data and error
     console.log("Supabase data received:", data, "Error:", error);
     if (error) throw error;
 
+    // محاسبه تراز کنکوری برای هر دانش‌آموز بر اساس نمرات فعلی
+    // جمع‌آوری فقط رکوردهایی که نمره دارند (null نباشد)
+    const validScores = data.filter(r => r.score !== null && r.score !== undefined);
+    const percentList = validScores.map(r => Number(r.score)).filter(x => !isNaN(x));
+    // اگر هیچ رکوردی نبود (برای جلوگیری از تقسیم بر صفر)
+    const mean = percentList.length > 0 ? percentList.reduce((a, b) => a + b, 0) / percentList.length : 50;
+    let stdDev = 10;
+    if (percentList.length > 1) {
+      const variance = percentList.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / percentList.length;
+      stdDev = Math.sqrt(variance);
+      if (stdDev < 5) stdDev = 5;
+    }
+
+    // sort descending by score
+    data.sort((a, b) => (b.score || 0) - (a.score || 0));
     data.forEach(r => {
         // Debug: Print each record to inspect column names and values
         console.log("Record:", r); // Print each record to inspect column names and values
 
         let dateStr = "-";
-        // Fallback: check for created_at property
-        if (r.created_at) { // fallback check
+        // نمایش تاریخ ثبت به وقت ایران (UTC+3:30)
+        if (r.created_at) {
             try {
-                const d = new Date(r.created_at);
-                if (!isNaN(d)) {
-                    const y = d.getFullYear();
-                    const m = String(d.getMonth() + 1).padStart(2, '0');
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const hour = String(d.getHours()).padStart(2, '0');
-                    const min = String(d.getMinutes()).padStart(2, '0');
-                    dateStr = `${y}/${m}/${day} ${hour}:${min}`;
-                }
+                const d = new Date(r.created_at); // UTC time
+                // Convert to Iran local time by adding 3.5 hours
+                const iranTime = new Date(d.getTime() + (3.5 * 60 * 60 * 1000));
+                const y = iranTime.getFullYear();
+                const m = String(iranTime.getMonth() + 1).padStart(2, '0');
+                const day = String(iranTime.getDate()).padStart(2, '0');
+                const hour = String(iranTime.getHours()).padStart(2, '0');
+                const min = String(iranTime.getMinutes()).padStart(2, '0');
+                dateStr = `${y}/${m}/${day} ${hour}:${min}`;
             } catch (e) {
-                console.error("خطا در تبدیل تاریخ:", e);
+                console.error("خطا در تبدیل تاریخ به ایران:", e);
             }
         }
 
-        const scoreDisplay = r.score != null ? r.score.toFixed(2) : "-";
-        const tScoreDisplay = r.tScore != null ? r.tScore.toFixed(2) : "-";
+        const scoreDisplay = r.score != null ? Number(r.score).toFixed(2) : "-";
+        // تراز را به صورت داینامیک محاسبه کن (بر اساس فرمول)
+        let tScoreDisplay = "-";
+        if (r.score !== null && r.score !== undefined && !isNaN(Number(r.score))) {
+          const tScoreCalc = 5000 + 1000 * ((Number(r.score) - mean) / stdDev);
+          tScoreDisplay = tScoreCalc.toFixed(2);
+        }
 
         const row = document.createElement("tr");
+        const info = r.data || "";
         row.innerHTML = `
-            <td>${r.name}</td>
-            <td>${r.exam}</td>
-            <td>${scoreDisplay}%<br><span style="font-size:11px;color:#666">تراز: ${tScoreDisplay}</span></td>
+            <td>${r.name}<br><span style="font-size:10px;color:#666">${info}</span></td>
+            <td>${scoreDisplay}%</td>
+            <td>${tScoreDisplay}</td>
             <td>${dateStr}</td>
         `;
         tbody.appendChild(row);
@@ -481,6 +672,71 @@ async function loadTeacherResults() {
     console.error(e);
   }
 }
+// دانلود اکسل نتایج آزمون انتخاب‌شده (CSV)
+document.getElementById("download-excel").onclick = async () => {
+    const selectedExamName = document.querySelector("#teacher-exam-list button.exam-btn-selected")?.innerText;
+    if (!selectedExamName) return alert("یک آزمون را انتخاب کنید");
+
+    try {
+        const { data, error } = await supabase
+            .from('exam_results')
+            .select('name, score, created_at, data')
+            .eq('exam', selectedExamName);
+        if (error) throw error;
+        if (!data || data.length === 0) return alert("نتیجه‌ای برای این آزمون موجود نیست");
+
+        // تبدیل زمان به ایران و محاسبه تراز
+        const validScores = data.filter(r => r.score !== null && r.score !== undefined);
+        const percentList = validScores.map(r => Number(r.score)).filter(x => !isNaN(x));
+        const mean = percentList.length > 0 ? percentList.reduce((a,b)=>a+b,0)/percentList.length : 50;
+        let stdDev = 10;
+        if (percentList.length > 1) {
+            const variance = percentList.reduce((sum,x)=>sum+Math.pow(x-mean,2),0)/percentList.length;
+            stdDev = Math.sqrt(variance);
+            if (stdDev < 5) stdDev = 5;
+        }
+
+        // sort descending by score
+        data.sort((a,b)=> (b.score || 0) - (a.score || 0));
+
+        const rows = data.map(r => {
+            let dateStr = "-";
+            if (r.created_at) {
+                const d = new Date(r.created_at);
+                const iranTime = new Date(d.getTime() + (3.5*60*60*1000));
+                const y = iranTime.getFullYear();
+                const m = String(iranTime.getMonth()+1).padStart(2,'0');
+                const day = String(iranTime.getDate()).padStart(2,'0');
+                const hour = String(iranTime.getHours()).padStart(2,'0');
+                const min = String(iranTime.getMinutes()).padStart(2,'0');
+                dateStr = `${y}/${m}/${day} ${hour}:${min}`;
+            }
+            const score = r.score != null ? Number(r.score).toFixed(2) : "-";
+            const tScoreCalc = (r.score != null && !isNaN(Number(r.score))) ? 5000 + 1000 * ((Number(r.score)-mean)/stdDev) : "-";
+            return {
+                "نام": r.name,
+                "پایه | رشته | مشاور": r.data || "",
+                "درصد": score,
+                "تراز": tScoreCalc !== "-" ? tScoreCalc.toFixed(2) : "-",
+                "تاریخ و ساعت": dateStr
+            };
+        });
+
+        // ایجاد CSV
+        const csvHeader = Object.keys(rows[0]).join(",") + "\n";
+        const csvBody = rows.map(r => Object.values(r).map(v=>`"${v}"`).join(",")).join("\n");
+        const csvContent = csvHeader + csvBody;
+
+        const blob = new Blob([csvContent], { type:"text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${selectedExamName}_نتایج.csv`;
+        link.click();
+    } catch(e) {
+        console.error(e);
+        alert("خطا در دانلود اکسل");
+    }
+};
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.38.4/dist/umd/supabase.min.js"></script>
 <script>
