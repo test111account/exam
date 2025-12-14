@@ -123,7 +123,7 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar"];
+const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar", "dini_24Azar"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
@@ -206,7 +206,8 @@ window.startExam = async function (examName) {
       "dini": "https://raw.githubusercontent.com/test111account/exam/main/dini.zip",
       "physics1": "https://raw.githubusercontent.com/test111account/exam/main/physics1.zip",
       "farsi2": "https://raw.githubusercontent.com/test111account/exam/main/farsi2.zip",
-      "riazi_22_Azar": "https://raw.githubusercontent.com/test111account/exam/main/riazi_22_Azar.zip"
+      "riazi_22_Azar": "https://raw.githubusercontent.com/test111account/exam/main/riazi_22_Azar.zip",
+      "dini_24Azar": "https://raw.githubusercontent.com/test111account/exam/main/dini_24Azar.zip"
   };
   const zipUrl = zipLinks[examName];
   if (!zipUrl) {
