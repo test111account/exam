@@ -43,6 +43,18 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
     color:white !important;
     border:2px solid #2b4ad8 !important;
 }
+
+/* Teacher panel table styling */
+#results-table th, #results-table td {
+    padding: 14px 18px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#results-table {
+    border-spacing: 0 8px;
+}
+
 </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -115,7 +127,15 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
   <br>
   <button id="download-excel" style="margin-bottom:10px;">📥 دانلود اکسل</button>
   <table id="results-table" class="hidden" style="width:100%; border-collapse:collapse;">
-    <thead><tr><th>نام</th><th>درصد</th><th>تراز</th><th>تاریخ</th></tr></thead>
+    <thead>
+    <tr>
+    <th>رتبه</th>
+    <th>نام</th>
+    <th>درصد</th>
+    <th>تراز</th>
+    <th>تاریخ</th>
+    </tr>
+    </thead>
     <tbody></tbody>
   </table>
 </div>
@@ -123,7 +143,7 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar", "dini_24Azar", "zist_26_Azar", "gosaste_26_Azar", "arabi_27_azar", "shimi_30_azar"];
+const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar", "dini_24Azar", "zist_26_Azar", "gosaste_26_Azar", "arabi_27_azar", "shimi_30_azar", "farsi_1dey"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
@@ -211,7 +231,8 @@ window.startExam = async function (examName) {
     "zist_26_Azar": "https://raw.githubusercontent.com/test111account/exam/main/zist_26_Azar.zip",
     "gosaste_26_Azar": "https://raw.githubusercontent.com/test111account/exam/main/gosaste_26_Azar.zip",
     "arabi_27_azar": "https://raw.githubusercontent.com/test111account/exam/main/arabi_27_azar.zip",
-    "shimi_30_azar": "https://raw.githubusercontent.com/test111account/exam/main/shimi_30_azar.zip"
+    "shimi_30_azar": "https://raw.githubusercontent.com/test111account/exam/main/shimi_30_azar.zip",
+    "farsi_1dey": "https://raw.githubusercontent.com/test111account/exam/main/farsi_1dey.zip"
   };
   const zipUrl = zipLinks[examName];
   if (!zipUrl) {
@@ -632,7 +653,7 @@ async function loadTeacherResults(selectedExamName = null) {
 
     // sort descending by score
     data.sort((a, b) => (b.score || 0) - (a.score || 0));
-    data.forEach(r => {
+    data.forEach((r, index) => {
         // Debug: Print each record to inspect column names and values
         console.log("Record:", r); // Print each record to inspect column names and values
 
@@ -663,9 +684,21 @@ async function loadTeacherResults(selectedExamName = null) {
         }
 
         const row = document.createElement("tr");
+
+        // DELETE rank-based highlighting classes (no longer needed)
+
         const info = r.data || "";
+        // Emoji-based ranking, no colors
+        let rankEmoji = "";
+        if (index === 0) rankEmoji = "🥇";
+        else if (index === 1) rankEmoji = "🥈";
+        else if (index === 2) rankEmoji = "🥉";
+        else if (index < 10) rankEmoji = "⭐";
+        else if (index < 20) rankEmoji = "🔹";
+
         row.innerHTML = `
-            <td>${r.name}<br><span style="font-size:10px;color:#666">${info}</span></td>
+            <td>${index + 1}</td>
+            <td>${rankEmoji} ${r.name}<br><span style="font-size:11px;color:#555">${info}</span></td>
             <td>${scoreDisplay}%</td>
             <td>${tScoreDisplay}</td>
             <td>${dateStr}</td>
@@ -730,9 +763,9 @@ document.getElementById("download-excel").onclick = async () => {
         // ایجاد CSV
         const csvHeader = Object.keys(rows[0]).join(",") + "\n";
         const csvBody = rows.map(r => Object.values(r).map(v=>`"${v}"`).join(",")).join("\n");
-        const csvContent = csvHeader + csvBody;
+        const csvContent = "\uFEFF" + csvHeader + csvBody;
 
-        const blob = new Blob([csvContent], { type:"text/csv;charset=utf-8;" });
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
         link.download = `${selectedExamName}_نتایج.csv`;
