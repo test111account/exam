@@ -143,7 +143,7 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar", "dini_24Azar", "zist_26_Azar", "gosaste_26_Azar", "arabi_27_azar", "shimi_30_azar", "farsi_1dey"];
+const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar", "dini_24Azar", "zist_26_Azar", "gosaste_26_Azar", "arabi_27_azar", "shimi_30_azar", "farsi_1dey", "physics_3dey"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
@@ -232,7 +232,8 @@ window.startExam = async function (examName) {
     "gosaste_26_Azar": "https://raw.githubusercontent.com/test111account/exam/main/gosaste_26_Azar.zip",
     "arabi_27_azar": "https://raw.githubusercontent.com/test111account/exam/main/arabi_27_azar.zip",
     "shimi_30_azar": "https://raw.githubusercontent.com/test111account/exam/main/shimi_30_azar.zip",
-    "farsi_1dey": "https://raw.githubusercontent.com/test111account/exam/main/farsi_1dey.zip"
+    "farsi_1dey": "https://raw.githubusercontent.com/test111account/exam/main/farsi_1dey.zip",
+    "physics_3dey": "https://raw.githubusercontent.com/test111account/exam/main/physics_3dey.zip"
   };
   const zipUrl = zipLinks[examName];
   if (!zipUrl) {
