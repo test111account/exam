@@ -46,13 +46,13 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 
 /* Teacher panel table styling */
 #results-table th, #results-table td {
-    padding: 6px 8px;
+    padding: 14px 18px;
     text-align: center;
     vertical-align: middle;
 }
 
 #results-table {
-    border-spacing: 0 2px;
+    border-spacing: 0 8px;
 }
 
 </style>
@@ -75,27 +75,21 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
   <p>نقش خود را انتخاب کنید:</p>
   <div class="role-buttons">
     <button id="student-btn">دانش‌آموز</button>
-    <button id="admin-btn">پنل معراج</button>
-    <button id="advisor-btn">پنل مشاور</button>
+    <button id="teacher-btn">مشاور</button>
   </div>
 
   <div id="student-form" class="hidden">
-    <input type="text" id="student-name" placeholder="رمز را وارد کنید">
+    <input type="text" id="student-name" placeholder="نام خود را وارد کنید">
+    <input type="text" id="advisor-name" placeholder="نام مشاور را وارد کنید">
     <input type="text" id="paye" placeholder="پایه را وارد کنید">
     <input type="text" id="reshte" placeholder="رشته را وارد کنید">
     <button id="student-enter">ورود</button>
   </div>
 
-  <div id="admin-form" class="hidden">
-    <input type="password" id="admin-pass" placeholder="رمز عبور پنل معراج">
-    <button id="admin-enter">ورود</button>
+  <div id="teacher-form" class="hidden">
+    <input type="password" id="teacher-pass" placeholder="رمز عبور را وارد کنید">
+    <button id="teacher-enter">ورود</button>
   </div>
-
-<div id="advisor-form" class="hidden">
-    <!-- حذف انتخاب اسم مشاور، فقط رمز عبور -->
-    <input type="password" id="advisor-pass" placeholder="رمز عبور مشاور">
-    <button id="advisor-enter">ورود</button>
-</div>
 </div>
 
 <div class="container hidden" id="exam-list">
@@ -127,538 +121,132 @@ input { padding:10px; border-radius:8px; border:1px solid #aaa; width:80%; margi
 </div>
 
 <div class="container hidden" id="teacher-panel">
-  <h2 id="teacher-panel-title">📊 پنل معراج</h2>
-  <div style="display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
-    <button id="teacher-tab-exam" class="teacher-tab-btn exam-btn-selected">نتایج بر اساس آزمون</button>
-    <button id="teacher-tab-student" class="teacher-tab-btn">نتایج بر اساس دانش‌آموز</button>
-    <button id="teacher-tab-advisor-scores" class="teacher-tab-btn">امتیاز مشاورها</button>
-    <button id="teacher-tab-student-scores" class="teacher-tab-btn">امتیاز دانش‌آموزان</button>
-  </div>
-  <div id="teacher-panel-exam-section">
-    <h3>یک آزمون را انتخاب کنید:</h3>
-    <div id="teacher-exam-list"></div>
-    <br>
-    <button id="download-excel" style="margin-bottom:10px;">📥 دانلود اکسل</button>
-    <table id="results-table" class="hidden" style="width:100%; border-collapse:collapse;">
-      <thead>
-      <tr>
-      <th>رتبه</th>
-      <th>نام</th>
-      <th>درصد</th>
-      <th>تراز</th>
-      <th>تاریخ</th>
-      </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div id="teacher-panel-student-section" class="hidden">
-    <h3>یک دانش‌آموز را انتخاب کنید:</h3>
-    <div id="teacher-student-list" style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px 16px;max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>
-    <div id="teacher-student-selected-name" style="font-weight:bold;margin-bottom:8px;"></div>
-    <table id="student-results-table" class="hidden" style="width:100%; border-collapse:collapse;">
-      <thead>
-      <tr>
-      <th>آزمون</th>
-      <th>درصد</th>
-      <th>تراز</th>
-      <th>تاریخ</th>
-      </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-  <div id="teacher-panel-advisor-scores-section" class="hidden">
-    <h3>امتیاز مشاورها (جمع تراز دانش‌آموزان)</h3>
-    <div id="advisor-scores-table-wrap"></div>
-  </div>
-  <div id="teacher-panel-student-scores-section" class="hidden">
-    <h3>امتیاز دانش‌آموزان (جمع تراز)</h3>
-    <div id="student-scores-table-wrap"></div>
-  </div>
+  <h2>📊 نتایج آزمون‌ها</h2>
+  <h3>یک آزمون را انتخاب کنید:</h3>
+  <div id="teacher-exam-list"></div>
+  <br>
+  <button id="download-excel" style="margin-bottom:10px;">📥 دانلود اکسل</button>
+  <table id="results-table" class="hidden" style="width:100%; border-collapse:collapse;">
+    <thead>
+    <tr>
+    <th>رتبه</th>
+    <th>نام</th>
+    <th>درصد</th>
+    <th>تراز</th>
+    <th>تاریخ</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const teacherPassword = "mm2hakdkcnks";
-const exams = ["shimi_14dey"];
-
-const examTimes = {
-  "shimi_14dey": {
-    start: new Date("2026-01-04T00:00:00Z"),
-    end: new Date("2026-01-07T23:59:59Z")
-  }
-};
+const exams = ["zist1", "shimi_1", "hendese1", "dini", "physics1", "farsi2", "riazi_22_Azar", "dini_24Azar", "zist_26_Azar", "gosaste_26_Azar", "arabi_27_azar", "shimi_30_azar", "farsi_1dey", "physics_azmon2_3dey", "zaban_4dey", "riazi_7dey", "dini_8_dey", "gosaste_10dey", "zist_10dey", "farsi_dars5_11dey", "shimi_14dey"];
 
 let selectedExam = null, currentQuestion = 0, answers = [], timerInterval, remainingTime, studentName = "";
 
 // نقش‌ها
 document.getElementById("student-btn").onclick = () => {
   document.getElementById("student-form").classList.remove("hidden");
-  document.getElementById("admin-form").classList.add("hidden");
-  document.getElementById("advisor-form").classList.add("hidden");
+  document.getElementById("teacher-form").classList.add("hidden");
 };
-document.getElementById("admin-btn").onclick = () => {
-  document.getElementById("admin-form").classList.remove("hidden");
+document.getElementById("teacher-btn").onclick = () => {
+  document.getElementById("teacher-form").classList.remove("hidden");
   document.getElementById("student-form").classList.add("hidden");
-  document.getElementById("advisor-form").classList.add("hidden");
-};
-document.getElementById("advisor-btn").onclick = () => {
-  document.getElementById("advisor-form").classList.remove("hidden");
-  document.getElementById("student-form").classList.add("hidden");
-  document.getElementById("admin-form").classList.add("hidden");
-};
-/* =========================
-   تعریف دانش‌آموزان و رمزها
-   ========================= */
-// تعریف studentPasswords باید قبل از استفاده باشد!
-const studentPasswords = {
-  "Edu01A": { name: "محمد حسین مویدی", advisor: "تینا شکری" },
-  "Edu02B": { name: "هستی ناصری", advisor: "ریحانه زارع" },
-  "Edu03C": { name: "سیده مدینه دانیالی", advisor: "حاجی زاده" },
-  "Edu04D": { name: "فاطیما اسلامی", advisor: "ریحانه زارع" },
-  "Edu05E": { name: "ستاره شاطری", advisor: "مبینا عنایتی" },
-  "Edu06F": { name: "سویل اسماعیل زاده", advisor: "تینا شکری" },
-  "Edu07G": { name: "معصومه قاسم پور", advisor: "معراج حبیبی" },
-  "Edu08H": { name: "سیده ریحانه سیدی", advisor: "معراج حبیبی" },
-  "Edu09J": { name: "مژده یوسفی", advisor: "معراج حبیبی" },
-  "Edu10K": { name: "یاسمن دلفان", advisor: "تینا شکری" },
-  "Edu11L": { name: "فاطمه پورظفر", advisor: "حاجی زاده" },
-  "Edu12M": { name: "فیروزه قبا", advisor: "ریحانه زارع" },
-  "Edu13N": { name: "آنیتا باقری", advisor: "مبینا عنایتی" },
-  "Edu14P": { name: "سید میثم مومن قزوینی", advisor: "معراج حبیبی" },
-  "Edu15Q": { name: "سنا جانباز", advisor: "ریحانه زارع" },
-  "Edu17S": { name: "علی صدیقیان", advisor: "مبینا عنایتی" },
-  "Edu18T": { name: "آران شیخ اسلامی", advisor: "معراج حبیبی" },
-  "Edu19U": { name: "ملیکا علوی", advisor: "معراج حبیبی" },
-  "Edu20V": { name: "فاطمه حسینزاده", advisor: "حاجی زاده" },
-  "Edu21W": { name: "فاطمه حیدری", advisor: "نگار داوری فر" },
-  "Edu22X": { name: "علی براری", advisor: "نگار داوری فر" },
-  "Edu23Y": { name: "شقایق خورشیدی", advisor: "معراج حبیبی" },
-  "Edu24Z": { name: "غزل حسینی", advisor: "حاجی زاده" },
-  "Edu25A": { name: "مهسا مرادی", advisor: "معراج حبیبی" },
-  "Edu26B": { name: "کمند اسکندری", advisor: "معراج حبیبی" },
-  "Edu27C": { name: "زهرا مناتی", advisor: "تینا شکری" },
-  "Edu28D": { name: "نازنین نیک روش", advisor: "معراج حبیبی" },
-  "Edu29E": { name: "پریا نراقی", advisor: "معراج حبیبی" },
-  "Edu30F": { name: "پرنیا نراقی", advisor: "معراج حبیبی" },
-  "Edu31G": { name: "ستایش مرادی", advisor: "نگار داوری فر" },
-  "Edu32H": { name: "محمد مهدی طاهری", advisor: "معراج حبیبی" },
-  "Edu33J": { name: "عرفان رشیدی", advisor: "معراج حبیبی" },
-  "Edu34K": { name: "آریانا میرزاده", advisor: "ریحانه زارع" },
-  "Edu35L": { name: "فردوس دغاغله", advisor: "تینا شکری" },
-  "Edu36M": { name: "فاطمه موسی پور", advisor: "زهرا نفس" },
-  "Edu37N": { name: "امیرحسین چراغیان", advisor: "نگار داوری فر" },
-  "Edu38P": { name: "مریم حیدری", advisor: "نگار داوری فر" },
-  "Edu39Q": { name: "ریحانه پناهی", advisor: "نگین مهاجر" },
-  "Edu40R": { name: "هستی بخشیده", advisor: "معراج حبیبی" },
-  "Edu41S": { name: "کبانا عطاافرین", advisor: "معراج حبیبی" },
-  "Edu42T": { name: "ملیکا حسینی", advisor: "معراج حبیبی" },
-  "Edu43U": { name: "عارفه جان نثار", advisor: "مبینا عنایتی" },
-  "Edu44V": { name: "هلنا الماسی", advisor: "معراج حبیبی" },
-  "Edu45W": { name: "یاسمین انصاری", advisor: "مبینا عنایتی" },
-  "Edu46X": { name: "سمانه شعبانی", advisor: "فاطمه زهرا کوشکی" },
-  "Edu47Y": { name: "حدیث خزایی", advisor: "معراج حبیبی" },
-  "Edu48Z": { name: "زهرا جغتایی", advisor: "فاطمه زهرا کوشکی" },
-  "Edu49A": { name: "آرش بخشی", advisor: "حنانه حسن زاده" },
-  "Edu50B": { name: "کیاناز صمدی", advisor: "نگین مهاجر" },
-  "Edu51C": { name: "ملیکا ریوف پناه", advisor: "معراج حبیبی" },
-  "Edu52D": { name: "ملینا اکبری", advisor: "معراج حبیبی" },
-  "Edu53E": { name: "ستایش ستوده", advisor: "حاجی زاده" },
-  "Edu54F": { name: "مبینا بخشی پور", advisor: "حاجی زاده" },
-  "Edu55G": { name: "ساینا مصطفایی", advisor: "معراج حبیبی" },
-  "Edu56H": { name: "مطهره  آذریان", advisor: "معراج حبیبی" },
-  "Edu57J": { name: "راوک شعلبانی", advisor: "حاجی زاده" },
-  "Edu58K": { name: "هستی دلشاد", advisor: "نگین مهاجر" },
-  "Edu59L": { name: "شیدا نانوازاده", advisor: "معراج حبیبی" },
-  "Edu60M": { name: "کوثر خسروی", advisor: "معراج حبیبی" },
-  "Edu61N": { name: "اسرا طالعی", advisor: "معراج حبیبی" },
-  "Edu62P": { name: "کمند کاوه", advisor: "معراج حبیبی" },
-  "Edu63Q": { name: "شینا جعفری", advisor: "حنانه حسن زاده" },
-  "Edu64R": { name: "ساجده نعمتی", advisor: "حاجی زاده" },
-  "Edu65S": { name: "هومن مجیدی", advisor: "معراج حبیبی" },
-  "Edu66T": { name: "طه بزار", advisor: "تینا شکری" },
-  "Edu67U": { name: "رکسانا کشاورز", advisor: "تینا شکری" },
-  "Edu68V": { name: "حلیا ملک", advisor: "معراج حبیبی" },
-  "Edu69W": { name: "فاطمه سارانی", advisor: "معراج حبیبی" },
-  "Edu70X": { name: "کوثر صداقت", advisor: "زهرا نفس" },
-  "Edu71Y": { name: "محدثه رستمی", advisor: "معصومه حسین زاده" },
-  "Edu72Z": { name: "فاطمه چرمی", advisor: "مریم جوکار" },
-  "Edu73A": { name: "یگانه میرزاخانی", advisor: "نگار داوری فر" },
-  "Edu74B": { name: "فاطمه پودینه یی", advisor: "مریم جوکار" },
-  "Edu75C": { name: "عسل سواعدی", advisor: "مریم جوکار" },
-  "Edu76D": { name: "فاطمه شمس", advisor: "ایرانا خوشحال" },
-  "Edu77E": { name: "مهنااکرامی", advisor: "مریم جوکار" },
-  "Edu78F": { name: "معصومه مسعودی", advisor: "ایرانا خوشحال" },
-  "Edu79G": { name: "محدثه سالم نیارق", advisor: "ایرانا خوشحال" },
-  "Edu80H": { name: "نازنین زهراشریفی مقدم", advisor: "ایرانا خوشحال" },
-  "Edu81J": { name: "زهرا راعی", advisor: "ایرانا خوشحال" },
-  "Edu82K": { name: "شقایق سرگزی", advisor: "معراج حبیبی" },
-  "123": { name: "دانش‌آموز تست", advisor: "مشاور تست" }
 };
 
-/* =========================
-   تعریف مشاورها و اضافه کردن دانش‌آموزان
-   ========================= */
-const advisors = {
-  "تینا شکری": { password: "tina123", students: [] },
-  "ریحانه زارع": { password: "reyhaneh456", students: [] },
-  "حاجی زاده": { password: "haji789", students: [] },
-  "مبینا عنایتی": { password: "mobina321", students: [] },
-  "معراج حبیبی": { password: "meraj852", students: [] },
-  "نگار داوری فر": { password: "negar963", students: [] },
-  "زهرا نفس": { password: "zahra258", students: [] },
-  "نگین مهاجر": { password: "negin147", students: [] },
-  "فاطمه زهرا کوشکی": { password: "koushki753", students: [] },
-  "حنانه حسن زاده": { password: "hananeh654", students: [] },
-  "معصومه حسین زاده": { password: "masoumeh951", students: [] },
-  "مریم جوکار": { password: "maryam159", students: [] },
-  "ایرانا خوشحال": { password: "irana357", students: [] },
-  "مشاور تست": { password: "testtest", students: [] }
-};
-
-// پرکردن لیست دانش‌آموزان هر مشاور
-for (const pw in studentPasswords) {
-  const s = studentPasswords[pw];
-  if (advisors[s.advisor]) {
-    advisors[s.advisor].students.push(s.name);
-  }
-}
-
-
-// Check for duplicate name before login
-async function checkDuplicateName(name, examName) {
-  const { data, error } = await supabase
-    .from('exam_results')
-    .select('name')
-    .eq('name', name)
-    .eq('exam', examName)
-    .limit(1);
-  if (error) console.error(error);
-  return data && data.length > 0;
-}
-
-document.getElementById("student-enter").onclick = async () => {
-  const password = document.getElementById("student-name").value.trim();
+// ورود دانش‌آموز
+document.getElementById("student-enter").onclick = () => {
+  studentName = document.getElementById("student-name").value.trim();
+  advisorName = document.getElementById("advisor-name").value.trim();
   paye = document.getElementById("paye").value.trim();
   reshte = document.getElementById("reshte").value.trim();
 
-  if (!password) return alert("رمز عبور را وارد کنید");
-  if (!studentPasswords[password]) return alert("رمز عبور نامعتبر است");
+  if (!studentName) return alert("نام را وارد کنید");
+  if (!advisorName) return alert("نام مشاور را وارد کنید");
   if (!paye) return alert("پایه را وارد کنید");
   if (!reshte) return alert("رشته را وارد کنید");
-
-  // studentName and advisorName are mapped from the object
-  const studentObj = studentPasswords[password];
-  studentName = studentObj.name;
-  advisorName = studentObj.advisor;
-  // For login, just proceed (duplicate check per exam is in startExam)
-  alert(studentName + " خوش آمدید 👋");
-  showStudentDashboard();
-};
-// داشبورد اصلی دانش‌آموز
-function showStudentDashboard() {
-  // Hide login and exam/result sections
   document.getElementById("login-section").classList.add("hidden");
-  document.getElementById("exam-section").classList.add("hidden");
-  document.getElementById("result-section").classList.add("hidden");
-  document.getElementById("exam-list").classList.add("hidden");
-  // student-results section might not exist yet, create if needed
-  let resultsSection = document.getElementById("student-results");
-  if (resultsSection) resultsSection.classList.add("hidden");
-
-  // Create dashboard container
-  let dashboard = document.getElementById("student-dashboard");
-  if (!dashboard) {
-    dashboard = document.createElement("div");
-    dashboard.id = "student-dashboard";
-    dashboard.className = "container";
-    document.body.prepend(dashboard);
-  }
-  dashboard.innerHTML = `
-    <h2>📌 پنل دانش‌آموز</h2>
-    <button id="show-exams-btn">📝 آزمون‌ها</button>
-    <button id="show-results-btn">📊 نتایج من</button>
-  `;
-
-  document.getElementById("show-exams-btn").onclick = () => {
-    dashboard.classList.add("hidden");
-    const cont = document.getElementById("exam-container");
-    cont.innerHTML = "";
-    const now = new Date();
-
-    exams.forEach((exam) => {
-      const startDate = examTimes[exam].start;
-      const endDate = examTimes[exam].end;
-      if (now >= startDate && now <= endDate) {
-        const div = document.createElement("div");
-        div.className = "exam-card";
-        div.innerHTML = `<h3>${exam}</h3><button onclick="startExam('${exam}')">شروع آزمون</button>`;
-        cont.appendChild(div);
-      }
-    });
-    document.getElementById("exam-list").classList.remove("hidden");
-  };
-  document.getElementById("show-results-btn").onclick = () => {
-    dashboard.classList.add("hidden");
-    // Create student-results section if it doesn't exist
-    let resDiv = document.getElementById("student-results");
-    if (!resDiv) {
-      resDiv = document.createElement("div");
-      resDiv.id = "student-results";
-      resDiv.className = "container hidden";
-      // Add to DOM after dashboard
-      dashboard.parentNode.insertBefore(resDiv, dashboard.nextSibling);
-    }
-    resDiv.classList.remove("hidden");
-    loadStudentResults();
-  };
-}
-/* =========================
-   اصلاح جمع امتیاز: کمترین تراز هر آزمون
-   ========================= */
-async function loadStudentResults() {
-  let resDiv = document.getElementById("student-results");
-  if (!resDiv) return;
-  resDiv.innerHTML = `
-    <h2>📊 نتایج من</h2>
-    <div id="my-results-table-wrap"></div>
-    <br>
-    <button onclick="resetStudentPanel()">صفحه اصلی</button>
-  `;
-  const tableWrap = resDiv.querySelector("#my-results-table-wrap");
-  tableWrap.innerHTML = "در حال بارگذاری...";
-
-  (async () => {
-    try {
-      const { data, error } = await supabase
-        .from('exam_results')
-        .select('exam, score, created_at, tScore, data')
-        .eq('name', studentName);
-      if (error) throw error;
-
-      const attemptsByExam = {};
-      if (data) {
-        data.forEach(r => {
-          if (!attemptsByExam[r.exam]) attemptsByExam[r.exam] = [];
-          attemptsByExam[r.exam].push(r);
-        });
-        // Sort each exam's attempts by created_at
-        for (const ex in attemptsByExam) {
-          attemptsByExam[ex].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-        }
-      }
-
-      const now = new Date();
-      let totalPoints = 0;
-      let html = `<table class="result-table"><thead>
-        <tr><th>آزمون</th><th>درصد</th><th>تراز</th><th>تاریخ</th></tr>
-      </thead><tbody>`;
-
-      exams.forEach(ex => {
-        const atts = attemptsByExam[ex] || [];
-        if (atts.length === 0) {
-          html += `<tr><td>${ex}</td><td colspan="3">شرکت نکرده</td></tr>`;
-        } else {
-          // Find min tScore for this exam (exclude null/undefined)
-          const tScores = atts.map(a => a.tScore).filter(x => x !== null && x !== undefined && !isNaN(Number(x)));
-          const minTScore = tScores.length > 0 ? Math.min(...tScores) : null;
-          atts.forEach((r, idx) => {
-            let dateStr = "-";
-            if (r.created_at) {
-              const d = new Date(r.created_at);
-              const iranTime = new Date(d.getTime() + 3.5*60*60*1000);
-              const y = iranTime.getFullYear();
-              const m = String(iranTime.getMonth()+1).padStart(2,'0');
-              const day = String(iranTime.getDate()).padStart(2,'0');
-              const hour = String(iranTime.getHours()).padStart(2,'0');
-              const min = String(iranTime.getMinutes()).padStart(2,'0');
-              dateStr = `${y}/${m}/${day} ${hour}:${min}`;
-            }
-            let tScoreStr = "-";
-            if (minTScore !== null) {
-              tScoreStr = minTScore.toFixed(2);
-              // Only add once per exam to totalPoints
-              if (idx === 0) totalPoints += minTScore;
-            }
-            let mark = "";
-            if (r.data && r.data.includes("**********")) mark = " **********";
-            else if (idx > 0) mark = " **********";
-            html += `<tr><td>${ex}${mark}</td><td>${r.score != null ? Number(r.score).toFixed(2)+'%' : '-'}</td><td>${tScoreStr}</td><td>${dateStr}</td></tr>`;
-          });
-        }
-      });
-      html += `<tr><td style="font-weight:bold;">جمع امتیاز</td><td colspan="3" style="font-weight:bold;">${totalPoints.toFixed(2)}</td></tr>`;
-      html += "</tbody></table>";
-      tableWrap.innerHTML = html;
-    } catch(e) {
-      tableWrap.innerHTML = "<p>خطا در دریافت نتایج.</p>";
-      console.error(e);
-    }
-  })();
-}
-
-// بازنشانی پنل دانش‌آموز به داشبورد اصلی (بدون نیاز به رمز مجدد)
-function resetStudentPanel() {
-  document.getElementById("exam-list").classList.add("hidden");
-  document.getElementById("exam-section").classList.add("hidden");
-  document.getElementById("result-section").classList.add("hidden");
-  const resDiv = document.getElementById("student-results");
-  if(resDiv) resDiv.classList.add("hidden");
-
-  const dashboard = document.getElementById("student-dashboard");
-  if(dashboard) dashboard.remove();
-
-  showStudentDashboard();
-}
-
-// ورود پنل معراج (ادمین)
-document.getElementById("admin-enter").onclick = () => {
-  if (document.getElementById("admin-pass").value === teacherPassword) {
-    showTeacherPanel({ role: "admin" });
-  } else {
-    alert("رمز اشتباه است!");
-  }
-};
-
-// ورود پنل مشاور فقط با رمز عبور (بدون انتخاب اسم)
-document.getElementById("advisor-enter").onclick = () => {
-  const pass = document.getElementById("advisor-pass").value;
-  let foundAdvisor = null;
-  for (const name in advisors) {
-    if (advisors[name].password === pass) {
-      foundAdvisor = name;
-      break;
-    }
-  }
-  if (!foundAdvisor) {
-    alert("رمز اشتباه است!");
-    return;
-  }
-  showTeacherPanel({ role: "advisor", advisor: foundAdvisor });
-};
-
-// Modal prompt for re-exam reason (overlay modal)
-async function promptReExamReason(examName) {
-  return new Promise((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.id = "reexam-overlay";
-    overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:#0008;display:flex;align-items:center;justify-content:center;z-index:9999;";
-
-    const modal = document.createElement("div");
-    modal.className = "container";
-    modal.style = "max-width:400px;text-align:center;";
-    modal.innerHTML = `
-      <h3>آزمون قبلاً انجام شده است</h3>
-      <p>دلیل شرکت مجدد را انتخاب کنید:</p>
-      <select id="reexam-reason" style="width:80%;padding:6px;border-radius:6px;margin:8px 0;">
-        <option value="">انتخاب کنید</option>
-        <option value="net_issue">مشکل نت و سایت</option>
-        <option value="other">سایر</option>
-      </select>
-      <br>
-      <button id="reexam-ok" style="margin:5px;">تأیید</button>
-      <button id="reexam-cancel" style="margin:5px;">لغو</button>
-    `;
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    document.getElementById("reexam-ok").onclick = () => {
-      const reason = document.getElementById("reexam-reason").value;
-      overlay.remove();
-      resolve(reason);
-    };
-    document.getElementById("reexam-cancel").onclick = () => {
-      overlay.remove();
-      resolve(null);
-    };
+  const cont = document.getElementById("exam-container");
+  cont.innerHTML = "";
+  exams.forEach((name) => {
+    const div = document.createElement("div");
+    div.className = "exam-card";
+    div.innerHTML = `<h3>${name}</h3><button onclick="startExam('${name}')">شروع آزمون</button>`;
+    cont.appendChild(div);
   });
-}
+  document.getElementById("exam-list").classList.remove("hidden");
+};
 
-// ========== مدیریت دانش‌آموزان فعال ==========
-// Global object for tracking active students per exam
-window.activeStudents = window.activeStudents || {};
+// ورود معلم
+document.getElementById("teacher-enter").onclick = () => {
+  if (document.getElementById("teacher-pass").value === teacherPassword) showTeacherPanel();
+  else alert("رمز اشتباه است!");
+};
 
-// شروع آزمون (با منطق فعال/غیرفعال شدن دانش‌آموزان)
-window.startExam = async function(examName) {
+// شروع آزمون (دانلود و استخراج فایل زیپ آزمون از Upload.ir با پشتیبانی کامل موبایل و مرورگرها)
+window.startExam = async function (examName) {
   selectedExam = examName;
-  const serverTime = new Date();
-  let startDate = examTimes[examName].start;
-  let endDate = examTimes[examName].end;
-
-  // Warn if before start
-  if (serverTime < startDate) {
-    alert(`این آزمون از ${startDate.toLocaleString()} فعال خواهد شد.`);
-    return;
-  }
-
-  // مدیریت activeStudents: مقداردهی اولیه آرایه
-  if (!window.activeStudents[examName]) window.activeStudents[examName] = [];
-  // آیا این دانش‌آموز قبلاً فعال است؟
-  let isActive = window.activeStudents[examName].includes(studentName);
-
-  // فقط اگر فعال نیست و زمان گذشته، اجازه ورود نده
-  if (!isActive && serverTime > endDate) {
-    alert(`مهلت این آزمون به پایان رسیده است. دیگر نمی‌توانید وارد شوید.`);
-    // به صفحه اصلی برگرد
-    resetStudentPanel();
-    return;
-  }
-
-  // Warn if remaining time less than duration
-  let defaultDuration = 300;
-  let examDuration = defaultDuration;
-  if ((endDate - serverTime)/1000 < examDuration) {
-    alert(`زمان باقی مانده کمتر از مدت آزمون است. ساعت ${endDate.toLocaleTimeString()} آخرین مهلت ثبت نتایج است.`);
-  }
-
-  // Check for previous attempts
-  const { data: existing } = await supabase
-      .from('exam_results')
-      .select('id, score')
-      .eq('name', studentName)
-      .eq('exam', examName)
-      .order('created_at', { ascending: true });
-
-  let isReExam = false;
-  if (existing && existing.length > 0 && existing.some(e => e.score != null)) {
-    // At least one finished attempt exists
-    const reason = await promptReExamReason(examName);
-    if (!reason) return;
-    if (reason !== "net_issue") {
-      alert("مجاز به شرکت مجدد نیستید.");
-      resetStudentPanel();
-      return;
-    }
-    isReExam = true;
-    await supabase.from('exam_results').insert([{
-      name: studentName,
-      exam: examName,
-      data: advisorName + " | " + paye + " | " + reshte + " **********",
-      created_at: new Date().toISOString()
-    }]);
-  } else if (!existing || existing.length === 0) {
-    await supabase.from('exam_results').insert([{
-      name: studentName,
-      exam: examName,
-      data: advisorName + " | " + paye + " | " + reshte,
-      created_at: new Date().toISOString()
-    }]);
-  }
-
-  // ثبت دانش‌آموز به عنوان فعال (اگر نبود)
-  if (!isActive) window.activeStudents[examName].push(studentName);
-
   document.getElementById("exam-list").classList.add("hidden");
   document.getElementById("exam-section").classList.remove("hidden");
   document.getElementById("exam-title").innerText = "آزمون " + examName;
+  // پیش از دانلود آزمون، زمان شروع آزمون را ثبت کن (UTC) و جلوگیری از ثبت رکورد تکراری
+  try {
+      // Check if a record already exists for this student and exam
+      const { data: existing, error: fetchError } = await supabase
+          .from('exam_results')
+          .select('id')
+          .eq('name', studentName)
+          .eq('exam', examName)
+          .limit(1);
 
+      if (fetchError) throw fetchError;
+
+      // Insert only if no existing record
+      if (!existing || existing.length === 0) {
+          await supabase
+              .from('exam_results')
+              .insert([{
+                  name: studentName,
+                  exam: examName,
+                  data: advisorName + " | " + paye + " | " + reshte,
+                  created_at: new Date().toISOString()
+              }]);
+      }
+  } catch(e) {
+      console.error("خطا در ذخیره زمان شروع آزمون:", e);
+  }
+  // GitHub raw links for ZIP files:
   const zipLinks = {
+    "zist1": "https://raw.githubusercontent.com/test111account/exam/main/zist1.zip",
+    "shimi_1": "https://raw.githubusercontent.com/test111account/exam/main/shimi_1.zip",
+    "hendese1": "https://raw.githubusercontent.com/test111account/exam/main/hendese1.zip",
+    "dini": "https://raw.githubusercontent.com/test111account/exam/main/dini.zip",
+    "physics1": "https://raw.githubusercontent.com/test111account/exam/main/physics1.zip",
+    "farsi2": "https://raw.githubusercontent.com/test111account/exam/main/farsi2.zip",
+    "riazi_22_Azar": "https://raw.githubusercontent.com/test111account/exam/main/riazi_22_Azar.zip",
+    "dini_24Azar": "https://raw.githubusercontent.com/test111account/exam/main/dini_24Azar.zip",
+    "zist_26_Azar": "https://raw.githubusercontent.com/test111account/exam/main/zist_26_Azar.zip",
+    "gosaste_26_Azar": "https://raw.githubusercontent.com/test111account/exam/main/gosaste_26_Azar.zip",
+    "arabi_27_azar": "https://raw.githubusercontent.com/test111account/exam/main/arabi_27_azar.zip",
+    "shimi_30_azar": "https://raw.githubusercontent.com/test111account/exam/main/shimi_30_azar.zip",
+    "farsi_1dey": "https://raw.githubusercontent.com/test111account/exam/main/farsi_1dey.zip",
+    "physics_azmon2_3dey": "https://raw.githubusercontent.com/test111account/exam/main/physics_azmon2_3dey.zip",
+    "zaban_4dey": "https://raw.githubusercontent.com/test111account/exam/main/zaban_4dey.zip",
+    "riazi_7dey": "https://raw.githubusercontent.com/test111account/exam/main/riazi_7dey.zip",
+    "dini_8_dey": "https://raw.githubusercontent.com/test111account/exam/main/dini_8_dey.zip",
+    "gosaste_10dey": "https://raw.githubusercontent.com/test111account/exam/main/gosaste_10dey.zip",
+    "zist_10dey": "https://raw.githubusercontent.com/test111account/exam/main/zist_10dey.zip",
+    "farsi_dars5_11dey": "https://raw.githubusercontent.com/test111account/exam/main/farsi_dars5_11dey.zip",
     "shimi_14dey": "https://raw.githubusercontent.com/test111account/exam/main/shimi_14dey.zip"
   };
   const zipUrl = zipLinks[examName];
-  if (!zipUrl) { alert("لینک آزمون یافت نشد!"); return; }
-
+  if (!zipUrl) {
+    alert("لینک آزمون یافت نشد!");
+    return;
+  }
   fetchAndLoadExamZip(zipUrl, examName);
 };
 
@@ -751,14 +339,7 @@ function showExam(questions, duration, folder, answerkeyPdfUrl) {
   currentQuestion = 0;
   renderQuestion();
   renderQList();
-  // End time logic for warning and auto-finish
-  let startDate = examTimes[folder].start;
-  let endDate = examTimes[folder].end;
-  const now = new Date();
-  if ((endDate - now)/1000 < duration) {
-    alert(`زمان باقی مانده کمتر از مدت آزمون است. ساعت ${endDate.toLocaleTimeString()} آخرین مهلت ثبت نتایج است.`);
-  }
-  startTimer(duration, endDate);
+  startTimer(duration);
   document.getElementById("prev-btn").style.display = "";
   document.getElementById("next-btn").style.display = "";
   document.getElementById("finish-btn").style.display = "";
@@ -796,30 +377,6 @@ function renderQuestion() {
 document.getElementById("next-btn").onclick = () => { if (currentQuestion < selectedExam.questions.length - 1) { currentQuestion++; renderQuestion(); } };
 document.getElementById("prev-btn").onclick = () => { if (currentQuestion > 0) { currentQuestion--; renderQuestion(); } };
 
-// اطمینان از وجود دکمه صفحه اصلی در exam-list و result-section (نه در exam-section)
-function ensureMainButtons() {
-  // exam-list
-  let examList = document.getElementById("exam-list");
-  if (examList && !examList.querySelector(".back-to-dashboard-btn")) {
-    const btn = document.createElement("button");
-    btn.className = "back-to-dashboard-btn";
-    btn.innerText = "صفحه اصلی";
-    btn.onclick = resetStudentPanel;
-    examList.appendChild(btn);
-  }
-  // result-section
-  let resultSection = document.getElementById("result-section");
-  if (resultSection && !resultSection.querySelector(".back-to-dashboard-btn")) {
-    const btn = document.createElement("button");
-    btn.className = "back-to-dashboard-btn";
-    btn.innerText = "صفحه اصلی";
-    btn.onclick = resetStudentPanel;
-    resultSection.appendChild(btn);
-  }
-}
-// Add main buttons on load
-ensureMainButtons();
-
 // لیست سؤالات پایین صفحه
 function renderQList() {
   const list = document.getElementById("question-list"); list.innerHTML = "";
@@ -841,45 +398,15 @@ function renderQList() {
   });
 }
 
-// تایمر با چک کردن پایان آزمون
-function startTimer(sec, endDate = null) {
+// تایمر
+function startTimer(sec) {
   remainingTime = sec;
   const timer = document.getElementById("timer");
-  clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     remainingTime--;
     const m = Math.floor(remainingTime / 60), s = remainingTime % 60;
     timer.innerText = `⏰ ${m}:${s.toString().padStart(2, '0')}`;
-    // Check if time is up
-    if (remainingTime <= 0) {
-      clearInterval(timerInterval);
-      finishExam();
-      return;
-    }
-    // Check if exam end time passed
-    // اما اگر دانش‌آموز فعال است، اجازه ادامه بده (فقط تایمر کار کند)
-    if (endDate && new Date() >= endDate) {
-      // اگر دانش‌آموز فعال است، اجازه ادامه بده (هیچ کاری نکن)
-      if (
-        window.activeStudents &&
-        selectedExam &&
-        selectedExam.folder &&
-        window.activeStudents[selectedExam.folder] &&
-        window.activeStudents[selectedExam.folder].includes(studentName)
-      ) {
-        // فقط نمایش هشدار یکبار
-        if (!timer.dataset.warned) {
-          alert("مهلت آزمون به پایان رسیده اما شما می‌توانید به پاسخ‌دهی ادامه دهید. لطفاً آزمون را به پایان برسانید.");
-          timer.dataset.warned = "1";
-        }
-        // تایمر ادامه پیدا می‌کند
-        return;
-      } else {
-        clearInterval(timerInterval);
-        finishExam();
-        return;
-      }
-    }
+    if (remainingTime <= 0) { clearInterval(timerInterval); finishExam(); }
   }, 1000);
 }
 
@@ -939,29 +466,16 @@ async function finishExam() {
   // ذخیره نتیجه فعلی در Supabase (با جلوگیری از تکراری و بروزرسانی رکورد ناقص)
   try {
       // Check for existing record with same student, advisor, and paye
-      // If data includes **********, mark as re-exam
-      let dataStr = advisorName + " | " + paye + " | " + reshte;
-      // If this attempt is a re-exam (data already includes ********** or previous record with **********), add stars
-      // Actually, always mark as re-exam if data has stars, or if this is NOT the first attempt (see logic at startExam)
       const { data: existing, error: fetchError } = await supabase
           .from('exam_results')
-          .select('id, score, data')
+          .select('id, score')
           .eq('name', studentName)
           .eq('exam', selectedExam.folder)
-          .eq('data', dataStr)
+          .eq('data', advisorName + " | " + paye + " | " + reshte)
           .limit(1);
 
       if (fetchError) throw fetchError;
 
-      // If the current attempt is a re-exam (data includes stars), always write stars in data
-      // If existing record (with this data) has **********, keep it for update; else, add if this is a re-exam
-      let isReExam = false;
-      // Determine if this is a re-exam by checking if data string for this attempt includes stars (from startExam logic)
-      if (dataStr.includes("**********")) isReExam = true;
-      // Or, if there is any previous record for this student/exam with data including **********
-      // (but for update, keep data as is)
-      // For insert, if not first attempt, add stars
-      // For update, keep data as is
       if (existing && existing.length > 0 && (existing[0].score === null || existing[0].score === undefined)) {
           // Update the existing record
           await supabase
@@ -974,23 +488,6 @@ async function finishExam() {
             .eq('id', existing[0].id);
       } else if (!existing || existing.length === 0) {
           // Insert new record if none exists
-          // If this is a re-exam, always add stars
-          let insertDataStr = dataStr;
-          // If this is a re-exam, ensure stars
-          if (dataStr.includes("**********")) {
-            insertDataStr = dataStr;
-          } else {
-            // Check if there is any previous record for this student/exam with data not matching this advisor|paye|reshte, but with stars
-            // Instead, better: if any previous attempt for this exam for this student (with any data) with score != null, and this data is not the first, mark as re-exam
-            const { data: allAtts } = await supabase
-              .from('exam_results')
-              .select('id, data')
-              .eq('name', studentName)
-              .eq('exam', selectedExam.folder);
-            if (allAtts && allAtts.length > 0 && allAtts.some(r => r.data && r.data.includes("**********"))) {
-              insertDataStr = dataStr + " **********";
-            }
-          }
           await supabase
             .from('exam_results')
             .insert([{
@@ -998,7 +495,7 @@ async function finishExam() {
               exam: selectedExam.folder,
               score: percentScore,
               tScore: tScore,
-              data: insertDataStr,
+              data: advisorName + " | " + paye + " | " + reshte,
               created_at: new Date().toISOString()
             }]);
       }
@@ -1041,17 +538,6 @@ async function finishExam() {
   const myRank = tScoreToRank.has(tScore) ? tScoreToRank.get(tScore) : tScoresSorted.length;
   const totalParticipants = tScoresSorted.length;
 
-  // حذف دانش‌آموز از لیست فعال‌ها (اگر وجود دارد)
-  if (
-    window.activeStudents &&
-    selectedExam &&
-    selectedExam.folder &&
-    window.activeStudents[selectedExam.folder]
-  ) {
-    const idx = window.activeStudents[selectedExam.folder].indexOf(studentName);
-    if (idx !== -1) window.activeStudents[selectedExam.folder].splice(idx, 1);
-  }
-
   // نمایش نتیجه
   document.getElementById("exam-section").classList.add("hidden");
   document.getElementById("result-section").classList.remove("hidden");
@@ -1079,8 +565,6 @@ async function finishExam() {
     tbody.innerHTML += row;
   });
 
-  // دکمه صفحه اصلی (اگر نیست اضافه کن)
-  ensureMainButtons();
 
   // تولید خودکار PDF از بخش نتیجه پس از نمایش (پشتیبانی از چند صفحه)
   setTimeout(async () => {
@@ -1121,370 +605,34 @@ async function finishExam() {
 
 // حذف ذخیره نتایج در localStorage (دیگر استفاده نمی‌شود)
 
-// نمایش پنل معلم/مشاور (Supabase)
-function showTeacherPanel(options = {}) {
-  // options: {role: "admin"|"advisor", advisor: "..." }
+// نمایش پنل معلم (Supabase)
+function showTeacherPanel() {
   document.getElementById("login-section").classList.add("hidden");
   document.getElementById("teacher-panel").classList.remove("hidden");
-  // Set panel title
-  const panelTitle = document.getElementById("teacher-panel-title");
-  if (options.role === "advisor" && options.advisor) {
-    panelTitle.innerText = "📊 پنل " + options.advisor;
-  } else {
-    panelTitle.innerText = "📊 پنل معراج";
-  }
-  // Default: show exam section, hide others
-  document.getElementById("teacher-panel-exam-section").classList.remove("hidden");
-  document.getElementById("teacher-panel-student-section").classList.add("hidden");
-  document.getElementById("teacher-panel-advisor-scores-section").classList.add("hidden");
-  document.getElementById("teacher-panel-student-scores-section").classList.add("hidden");
-  document.getElementById("teacher-tab-exam").classList.add("exam-btn-selected");
-  document.getElementById("teacher-tab-student").classList.remove("exam-btn-selected");
-  document.getElementById("teacher-tab-advisor-scores").classList.remove("exam-btn-selected");
-  document.getElementById("teacher-tab-student-scores").classList.remove("exam-btn-selected");
-
-  // Exam tab
   const list = document.getElementById("teacher-exam-list");
   list.innerHTML = "";
   const resultsTable = document.getElementById("results-table");
   resultsTable.classList.add("hidden"); // hide initially
-  // Only show "نتایج بر اساس آزمون" tab for admin, not advisor
-  if (!(options.role === "advisor" && options.advisor)) {
-    exams.forEach(ex => {
+
+  exams.forEach(ex => {
       const btn = document.createElement("button");
       btn.style.margin = "5px";
       btn.innerText = ex;
       btn.onclick = () => {
-        // Remove highlight from all buttons
-        document.querySelectorAll("#teacher-exam-list button").forEach(b => b.classList.remove("exam-btn-selected"));
-        // Highlight the selected button
-        btn.classList.add("exam-btn-selected");
-        // Show the results table
-        resultsTable.classList.remove("hidden");
-        loadTeacherResults(ex, null);
+          // Remove highlight from all buttons
+          document.querySelectorAll("#teacher-exam-list button").forEach(b => b.classList.remove("exam-btn-selected"));
+          // Highlight the selected button
+          btn.classList.add("exam-btn-selected");
+          // Show the results table
+          resultsTable.classList.remove("hidden");
+          loadTeacherResults(ex);
       };
       list.appendChild(btn);
-    });
-  }
-
-  // Student tab setup
-  if (options.role === "advisor" && options.advisor) {
-    setupTeacherStudentTab(advisors[options.advisor].students);
-  } else {
-    setupTeacherStudentTab();
-  }
-
-  // Tab switching logic
-  // Hide "نتایج بر اساس آزمون" tab for advisor
-  if (options.role === "advisor" && options.advisor) {
-    document.getElementById("teacher-tab-exam").style.display = "none";
-    document.getElementById("teacher-panel-exam-section").classList.add("hidden");
-  } else {
-    document.getElementById("teacher-tab-exam").style.display = "";
-  }
-  document.getElementById("teacher-tab-exam").onclick = function() {
-    document.getElementById("teacher-panel-exam-section").classList.remove("hidden");
-    document.getElementById("teacher-panel-student-section").classList.add("hidden");
-    document.getElementById("teacher-panel-advisor-scores-section").classList.add("hidden");
-    document.getElementById("teacher-panel-student-scores-section").classList.add("hidden");
-    this.classList.add("exam-btn-selected");
-    document.getElementById("teacher-tab-student").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-advisor-scores").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-student-scores").classList.remove("exam-btn-selected");
-  };
-  document.getElementById("teacher-tab-student").onclick = function() {
-    document.getElementById("teacher-panel-exam-section").classList.add("hidden");
-    document.getElementById("teacher-panel-student-section").classList.remove("hidden");
-    document.getElementById("teacher-panel-advisor-scores-section").classList.add("hidden");
-    document.getElementById("teacher-panel-student-scores-section").classList.add("hidden");
-    this.classList.add("exam-btn-selected");
-    document.getElementById("teacher-tab-exam").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-advisor-scores").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-student-scores").classList.remove("exam-btn-selected");
-    // On switching, load student list if not already loaded
-    if (options.role === "advisor" && options.advisor) {
-      setupTeacherStudentTab(advisors[options.advisor].students);
-    } else {
-      setupTeacherStudentTab();
-    }
-  };
-  document.getElementById("teacher-tab-advisor-scores").onclick = function() {
-    document.getElementById("teacher-panel-exam-section").classList.add("hidden");
-    document.getElementById("teacher-panel-student-section").classList.add("hidden");
-    document.getElementById("teacher-panel-advisor-scores-section").classList.remove("hidden");
-    document.getElementById("teacher-panel-student-scores-section").classList.add("hidden");
-    this.classList.add("exam-btn-selected");
-    document.getElementById("teacher-tab-exam").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-student").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-student-scores").classList.remove("exam-btn-selected");
-    showAdvisorScores(options);
-  };
-  document.getElementById("teacher-tab-student-scores").onclick = function() {
-    document.getElementById("teacher-panel-exam-section").classList.add("hidden");
-    document.getElementById("teacher-panel-student-section").classList.add("hidden");
-    document.getElementById("teacher-panel-advisor-scores-section").classList.add("hidden");
-    document.getElementById("teacher-panel-student-scores-section").classList.remove("hidden");
-    this.classList.add("exam-btn-selected");
-    document.getElementById("teacher-tab-exam").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-student").classList.remove("exam-btn-selected");
-    document.getElementById("teacher-tab-advisor-scores").classList.remove("exam-btn-selected");
-    loadStudentScores(options);
-  };
-}
-
-// نمایش امتیاز مشاورها (جمع تراز دانش‌آموزان هر مشاور)
-async function showAdvisorScores(options = {}) {
-  const wrap = document.getElementById("advisor-scores-table-wrap");
-  wrap.innerHTML = "در حال بارگذاری...";
-  try {
-    // دریافت تمام نتایج
-    let query = supabase
-      .from('exam_results')
-      .select('name, tScore, data, exam');
-    let { data, error } = await query;
-    if (error) throw error;
-    // فقط دانش‌آموزان مشاور جاری (در پنل مشاور)
-    let allowedStudents = null;
-    if (options.role === "advisor" && options.advisor) {
-      allowedStudents = advisors[options.advisor].students;
-    }
-    if (allowedStudents) {
-      data = data.filter(r => allowedStudents.includes(r.name));
-    }
-    // ساخت map: advisor -> جمع تراز دانش‌آموزان
-    const advisorMap = {};
-    // برای هر دانش‌آموز، جمع کمترین تراز هر آزمون (برای هر دانش‌آموز)
-    const studentExamMinTScore = {};
-    // Build mapping from student name to advisor using advisors object
-    const nameToAdvisor = {};
-    for (const advName in advisors) {
-      advisors[advName].students.forEach(s => { nameToAdvisor[s] = advName; });
-    }
-    (data||[]).forEach(r => {
-      if (!r.name || r.tScore == null || isNaN(Number(r.tScore))) return;
-      // نام مشاور را از لیست advisors بگیر
-      let adv = nameToAdvisor[r.name] || "نامشخص";
-      if (!studentExamMinTScore[r.name]) studentExamMinTScore[r.name] = {};
-      if (!studentExamMinTScore[r.name][r.exam]) studentExamMinTScore[r.name][r.exam] = Number(r.tScore);
-      else studentExamMinTScore[r.name][r.exam] = Math.min(studentExamMinTScore[r.name][r.exam], Number(r.tScore));
-      // ذخیره نام مشاور دانش‌آموز
-      if (!studentExamMinTScore[r.name]._advisor) studentExamMinTScore[r.name]._advisor = adv;
-    });
-    // حالا جمع امتیاز دانش‌آموزان هر مشاور را محاسبه کن
-    for (const student in studentExamMinTScore) {
-      const sData = studentExamMinTScore[student];
-      let adv = sData._advisor || "نامشخص";
-      let sum = 0;
-      for (const ex in sData) {
-        if (ex === "_advisor") continue;
-        sum += Number(sData[ex]);
-      }
-      if (!advisorMap[adv]) advisorMap[adv] = { total: 0, students: [] };
-      advisorMap[adv].total += sum;
-      advisorMap[adv].students.push({ name: student, total: sum });
-    }
-    // مرتب‌سازی نزولی بر اساس total
-    const advisorList = Object.entries(advisorMap)
-      .map(([name, obj]) => ({ name, total: obj.total, count: obj.students.length }))
-      .sort((a, b) => b.total - a.total);
-    // نمایش جدول
-    let html = `<table class="result-table"><thead>
-      <tr><th>رتبه</th><th>مشاور</th><th>جمع امتیاز</th><th>تعداد دانش‌آموز</th></tr>
-    </thead><tbody>`;
-    advisorList.forEach((a, i) => {
-      html += `<tr>
-        <td>${i + 1}</td>
-        <td>${a.name}</td>
-        <td>${a.total.toFixed(2)}</td>
-        <td>${a.count}</td>
-      </tr>`;
-    });
-    html += "</tbody></table>";
-    wrap.innerHTML = html;
-  } catch (e) {
-    wrap.innerHTML = "<span style='color:red'>خطا در دریافت امتیاز مشاورها</span>";
-    console.error(e);
-  }
-}
-
-// نمایش امتیاز دانش‌آموزان (جمع تراز)
-async function loadStudentScores(options = {}) {
-  const wrap = document.getElementById("student-scores-table-wrap");
-  wrap.innerHTML = "در حال بارگذاری...";
-  try {
-    let query = supabase
-      .from('exam_results')
-      .select('name, tScore, data, exam');
-    let { data, error } = await query;
-    if (error) throw error;
-    // فقط دانش‌آموزان مشاور جاری (در پنل مشاور)
-    let allowedStudents = null;
-    if (options.role === "advisor" && options.advisor) {
-      allowedStudents = advisors[options.advisor].students;
-    }
-    if (allowedStudents) {
-      data = data.filter(r => allowedStudents.includes(r.name));
-    }
-    // برای هر دانش‌آموز، جمع کمترین تراز هر آزمون (یعنی هر آزمون فقط یکبار)
-    const studentMap = {};
-    (data||[]).forEach(r => {
-      if (!r.name || r.tScore == null || isNaN(Number(r.tScore))) return;
-      if (!studentMap[r.name]) studentMap[r.name] = { total: 0, exams: {} };
-      if (!studentMap[r.name].exams[r.exam]) studentMap[r.name].exams[r.exam] = Number(r.tScore);
-      else studentMap[r.name].exams[r.exam] = Math.min(studentMap[r.name].exams[r.exam], Number(r.tScore));
-      // نام مشاور را هم ذخیره کن
-      if (!studentMap[r.name]._advisor && r.data && typeof r.data === "string") {
-        const parts = r.data.split("|");
-        if (parts.length >= 1) studentMap[r.name]._advisor = parts[0].trim();
-      }
-    });
-    // جمع امتیاز هر دانش‌آموز
-    for (const name in studentMap) {
-      const s = studentMap[name];
-      s.total = 0;
-      for (const ex in s.exams) {
-        s.total += Number(s.exams[ex]);
-      }
-    }
-    // لیست نزولی بر اساس total
-    const studentList = Object.entries(studentMap)
-      .map(([name, obj]) => ({ name, total: obj.total, advisor: obj._advisor || "-" }))
-      .sort((a, b) => b.total - a.total);
-    // نمایش جدول
-    let html = `<table class="result-table"><thead>
-      <tr><th>رتبه</th><th>نام دانش‌آموز</th><th>مشاور</th><th>جمع امتیاز</th></tr>
-    </thead><tbody>`;
-    studentList.forEach((s, i) => {
-      html += `<tr>
-        <td>${i + 1}</td>
-        <td>${s.name}</td>
-        <td>${s.advisor}</td>
-        <td>${s.total.toFixed(2)}</td>
-      </tr>`;
-    });
-    html += "</tbody></table>";
-    wrap.innerHTML = html;
-  } catch (e) {
-    wrap.innerHTML = "<span style='color:red'>خطا در دریافت امتیاز دانش‌آموزان</span>";
-    console.error(e);
-  }
-}
-
-// Setup and load student list for the teacher panel
-// studentList: optional array of allowed student names
-async function setupTeacherStudentTab(studentList = null) {
-  const studentListDiv = document.getElementById("teacher-student-list");
-  if (!studentListDiv) return;
-  // Always reload (to allow different advisor logins)
-  studentListDiv.innerHTML = "در حال بارگذاری...";
-  try {
-    // Use names from studentPasswords for consistency
-    let studentNames = Object.values(studentPasswords)
-      .map(o => o.name)
-      .filter((name, idx, arr) => arr.indexOf(name) === idx);
-    if (studentList) {
-      // Only show allowed students
-      studentNames = studentNames.filter(n => studentList.includes(n));
-    }
-    studentNames = studentNames.sort((a, b) => a.localeCompare(b, 'fa'));
-    studentListDiv.innerHTML = "";
-    studentNames.forEach(name => {
-      const btn = document.createElement("button");
-      btn.innerText = name;
-      btn.style.margin = "2px 4px";
-      btn.onclick = function() {
-        // Remove highlight from all buttons
-        studentListDiv.querySelectorAll("button").forEach(b=>b.classList.remove("exam-btn-selected"));
-        btn.classList.add("exam-btn-selected");
-        showStudentResultsTable(name);
-      };
-      studentListDiv.appendChild(btn);
-    });
-  } catch (e) {
-    studentListDiv.innerHTML = "<span style='color:red'>خطا در دریافت لیست دانش‌آموزان</span>";
-    console.error(e);
-  }
-}
-
-// Load and show results for a specific student
-async function showStudentResultsTable(studentName) {
-  const table = document.getElementById("student-results-table");
-  const tbody = table.querySelector("tbody");
-  const nameDiv = document.getElementById("teacher-student-selected-name");
-  table.classList.add("hidden");
-  nameDiv.innerText = studentName ? "دانش‌آموز: " + studentName : "";
-  if (!studentName) return;
-  tbody.innerHTML = "";
-  table.classList.remove("hidden");
-  // Fetch all attempts for this student
-  try {
-    const { data, error } = await supabase
-      .from('exam_results')
-      .select('exam, score, created_at, tScore, data')
-      .eq('name', studentName);
-    if (error) throw error;
-    // Group by exam, keep all attempts (sorted by created_at)
-    const attemptsByExam = {};
-    (data||[]).forEach(r => {
-      if (!attemptsByExam[r.exam]) attemptsByExam[r.exam] = [];
-      attemptsByExam[r.exam].push(r);
-    });
-    for (const ex in attemptsByExam) {
-      attemptsByExam[ex].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    }
-    const now = new Date();
-    let totalPoints = 0;
-    // Show in exam order
-    exams.forEach(ex => {
-      const atts = attemptsByExam[ex] || [];
-      if (atts.length === 0) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${ex}</td><td colspan="3">شرکت نکرده</td>`;
-        tbody.appendChild(tr);
-      } else {
-        atts.forEach((r, idx) => {
-          let dateStr = "-";
-          if (r.created_at) {
-            const d = new Date(r.created_at);
-            const iranTime = new Date(d.getTime() + 3.5*60*60*1000);
-            const y = iranTime.getFullYear();
-            const m = String(iranTime.getMonth()+1).padStart(2,'0');
-            const day = String(iranTime.getDate()).padStart(2,'0');
-            const hour = String(iranTime.getHours()).padStart(2,'0');
-            const min = String(iranTime.getMinutes()).padStart(2,'0');
-            dateStr = `${y}/${m}/${day} ${hour}:${min}`;
-          }
-          let startDate = examTimes[ex].start;
-          let endDate = examTimes[ex].end;
-          let tScoreStr = "-";
-          // Only show tScore if exam ended
-          if (endDate < now && r.tScore !== undefined && r.tScore !== null && !isNaN(Number(r.tScore))) {
-            tScoreStr = Number(r.tScore).toFixed(2);
-            // Only include tScore for finished exams in total points (جمع امتیاز فقط برای آزمون‌هایی که پایان‌شان گذشته)
-            totalPoints += Number(r.tScore);
-          }
-          let mark = "";
-          if (r.data && r.data.includes("**********")) mark = " **********";
-          else if (idx > 0) mark = " **********";
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${ex}${mark}</td><td>${r.score != null ? Number(r.score).toFixed(2)+'%' : '-'}</td><td>${tScoreStr}</td><td>${dateStr}</td>`;
-          tbody.appendChild(tr);
-        });
-      }
-    });
-    // Add total points row (جمع امتیاز)
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td style="font-weight:bold;">جمع امتیاز</td><td colspan="3" style="font-weight:bold;">${totalPoints.toFixed(2)}</td>`;
-    tbody.appendChild(tr);
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="4">خطا در دریافت نتایج</td></tr>`;
-    console.error(e);
-  }
+  });
 }
 
 // لود نتایج ذخیره‌شده از Supabase با نمایش تاریخ و ساعت ثبت و ستون تراز
-// allowedStudents: optional array of names to filter
-async function loadTeacherResults(selectedExamName = null, allowedStudents = null) {
+async function loadTeacherResults(selectedExamName = null) {
   const tbody = document.querySelector("#teacher-panel tbody");
   tbody.innerHTML = "";
   document.getElementById("results-table").classList.remove("hidden");
@@ -1493,18 +641,13 @@ async function loadTeacherResults(selectedExamName = null, allowedStudents = nul
       .from('exam_results')
       .select('name, exam, score, created_at, data');
     if (selectedExamName) query = query.eq('exam', selectedExamName);
-    let { data, error } = await query;
+    const { data, error } = await query;
     // Debug: Print all received data and error
     console.log("Supabase data received:", data, "Error:", error);
     if (error) throw error;
 
     // محاسبه تراز کنکوری برای هر دانش‌آموز بر اساس نمرات فعلی
     // جمع‌آوری فقط رکوردهایی که نمره دارند (null نباشد)
-    // فیلتر بر اساس دانش‌آموزان مجاز (برای مشاور)
-    if (allowedStudents && Array.isArray(allowedStudents)) {
-      data = data.filter(r => allowedStudents.includes(r.name));
-    }
-
     const validScores = data.filter(r => r.score !== null && r.score !== undefined);
     const percentList = validScores.map(r => Number(r.score)).filter(x => !isNaN(x));
     // اگر هیچ رکوردی نبود (برای جلوگیری از تقسیم بر صفر)
@@ -1575,7 +718,7 @@ async function loadTeacherResults(selectedExamName = null, allowedStudents = nul
     console.error(e);
   }
 }
-// دانلود اکسل نتایج آزمون انتخاب‌شده (XLSX با SheetJS)
+// دانلود اکسل نتایج آزمون انتخاب‌شده (CSV)
 document.getElementById("download-excel").onclick = async () => {
     const selectedExamName = document.querySelector("#teacher-exam-list button.exam-btn-selected")?.innerText;
     if (!selectedExamName) return alert("یک آزمون را انتخاب کنید");
@@ -1625,26 +768,16 @@ document.getElementById("download-excel").onclick = async () => {
             };
         });
 
-        // ساخت اکسل با SheetJS
-        // بارگذاری SheetJS فقط در صورت نیاز
-        if (!window.XLSX) {
-            // بارگذاری SheetJS از CDN
-            await new Promise((resolve, reject) => {
-                const script = document.createElement("script");
-                script.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
-                script.onload = resolve;
-                script.onerror = reject;
-                document.body.appendChild(script);
-            });
-        }
-        // ساخت ورک‌بوک و شیت
-        const ws = window.XLSX.utils.json_to_sheet(rows);
-        // تنظیم راست‌چین و فونت (فقط برای SheetJS Pro قابل تنظیم کامل است ولی محدود برای رایگان)
-        // اما اکسل فارسی را به‌درستی نمایش می‌دهد اگر داده‌ها UTF-8 باشند.
-        const wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, ws, "نتایج آزمون");
-        // نوشتن فایل
-        window.XLSX.writeFile(wb, `${selectedExamName}_نتایج.xlsx`, { bookType: "xlsx", type: "binary" });
+        // ایجاد CSV
+        const csvHeader = Object.keys(rows[0]).join(",") + "\n";
+        const csvBody = rows.map(r => Object.values(r).map(v=>`"${v}"`).join(",")).join("\n");
+        const csvContent = "\uFEFF" + csvHeader + csvBody;
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${selectedExamName}_نتایج.csv`;
+        link.click();
     } catch(e) {
         console.error(e);
         alert("خطا در دانلود اکسل");
@@ -1658,3 +791,4 @@ document.getElementById("download-excel").onclick = async () => {
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 </body>
+</html>
